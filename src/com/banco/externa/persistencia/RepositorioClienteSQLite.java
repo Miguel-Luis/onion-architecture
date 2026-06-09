@@ -44,7 +44,7 @@ public class RepositorioClienteSQLite implements IRepositorioCliente {
     public Optional<Cliente> buscarPorDocumento(String documento) {
         String sql = "SELECT documento, nombre FROM clientes WHERE documento = ?";
         try (Connection con = bd.abrirConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, documento);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {

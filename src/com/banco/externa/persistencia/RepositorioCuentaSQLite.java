@@ -84,7 +84,7 @@ public class RepositorioCuentaSQLite implements IRepositorioCuenta {
             WHERE c.numero = ?
             """;
         try (Connection con = bd.abrirConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+            PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, numero);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -109,8 +109,8 @@ public class RepositorioCuentaSQLite implements IRepositorioCuenta {
             JOIN clientes cl ON cl.documento = c.documento_titular
             """;
         try (Connection con = bd.abrirConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 String numero = rs.getString("numero");
                 Cliente titular = new Cliente(rs.getString("documento"), rs.getString("nombre"));

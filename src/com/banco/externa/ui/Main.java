@@ -69,18 +69,18 @@ public class Main {
         // --- Caso de uso: abrir cuentas ---
         banco.abrirCuenta("CC-001", "Ana Pérez", "0001");
         banco.abrirCuenta("CC-002", "Luis Gómez", "0002");
-        banco.abrirCuenta("CC-003", "Juan Pérez", "0003");
+        //banco.abrirCuenta("CC-003", "Juan Pérez", "0003");
         System.out.println("Se abrieron 2 cuentas: 0001 (Ana) y 0002 (Luis)\n");
 
         // --- Caso de uso: depósitos ---
         banco.depositar("0001", 1000);
         banco.depositar("0002", 500);
-        banco.depositar("0003", 1000);
+        //banco.depositar("0003", 1000);
         System.out.println("Ana depositó 1000 | Luis depositó 500\n");
 
         // --- Caso de uso: transferencia ---
         banco.transferir("0001", "0002", 300);
-        banco.transferir("0002", "0003", 200);
+        //banco.transferir("0002", "0003", 200);
         System.out.println("Ana transfirió 300 a Luis\n");
 
         // --- Caso de uso: aplicar intereses (política de dominio) ---
@@ -98,7 +98,7 @@ public class Main {
         // --- Mostrar estado final ---
         imprimirEstado(banco.consultar("0001"));
         imprimirEstado(banco.consultar("0002"));
-        imprimirEstado(banco.consultar("0003"));
+        //imprimirEstado(banco.consultar("0003"));
     }
 
     private static void imprimirEstado(ResumenCuenta cuenta) {

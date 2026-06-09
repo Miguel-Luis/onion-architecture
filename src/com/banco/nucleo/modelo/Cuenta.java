@@ -36,7 +36,7 @@ public class Cuenta {
      * constructor y los métodos de negocio (depositar, retirar...).
      */
     public static Cuenta reconstituir(String numero, Cliente titular,
-                                      double saldo, List<Movimiento> movimientos) {
+                                    double saldo, List<Movimiento> movimientos) {
         Cuenta cuenta = new Cuenta(numero, titular);
         cuenta.saldo = saldo;
         cuenta.movimientos.addAll(movimientos);
