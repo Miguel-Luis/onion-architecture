@@ -1,36 +1,27 @@
 package com.banco.externa.ui;
 
+import com.banco.nucleo.aplicacion.OperacionRechazadaException;
 import com.banco.nucleo.aplicacion.ServicioCuentas;
 import com.banco.nucleo.aplicacion.dto.MovimientoDTO;
 import com.banco.nucleo.aplicacion.dto.ResumenCuenta;
-import com.banco.nucleo.contratos.IRepositorioCliente;
-import com.banco.nucleo.contratos.IRepositorioCuenta;
-import com.banco.nucleo.modelo.PoliticaInteres;
-import com.banco.nucleo.modelo.SaldoInsuficienteException;
-import com.banco.externa.persistencia.BaseDatosSQLite;
-import com.banco.externa.persistencia.RepositorioClienteEnMemoria;
-import com.banco.externa.persistencia.RepositorioClienteSQLite;
-import com.banco.externa.persistencia.RepositorioCuentaEnMemoria;
-import com.banco.externa.persistencia.RepositorioCuentaSQLite;
+import com.banco.externa.config.Bootstrap;
 
 import java.time.format.DateTimeFormatter;
 
 /**
- * CAPA EXTERNA - INTERFAZ GRÁFICA + COMPOSICIÓN.
+ * CAPA EXTERNA - INTERFAZ GRÁFICA.
  *
- * Es el "Composition Root": el único lugar que conoce las clases concretas de
- * infraestructura y las INYECTA hacia adentro. Aquí se arma toda la cebolla.
+ * La UI es PURA presentación. Solo habla con la capa de Aplicación:
+ *  - llama a sus casos de uso (depositar, transferir, ...),
+ *  - muestra los DTOs que recibe (ResumenCuenta, MovimientoDTO),
+ *  - captura excepciones de Aplicación (OperacionRechazadaException).
  *
- * Para MOSTRAR datos, la UI usa SOLO los DTOs que devuelve la capa de
- * Aplicación (ResumenCuenta, MovimientoDTO). Ya NO manipula entidades del
- * dominio como Cuenta o Movimiento: el dominio queda protegido.
- *
- * Las dos únicas referencias al modelo que quedan son legítimas del anillo
- * externo: PoliticaInteres (cableado del Composition Root) y la excepción de
- * negocio que capturamos para la demo.
+ * NO tiene NINGUNA referencia al modelo de dominio: no conoce Cuenta,
+ * Movimiento, PoliticaInteres ni las excepciones del núcleo. El ensamblado de
+ * las piezas concretas vive en el Composition Root (externa.config.Bootstrap).
  *
  * Dirección de las dependencias (siempre HACIA EL NÚCLEO):
- *   Capa Externa (UI / Infra)  ->  Núcleo (Aplicación -> Contratos -> Modelo)
+ *   Capa Externa (UI)  ->  Núcleo (Aplicación)
  * El núcleo nunca conoce a la capa externa.
  */
 public class Main {
@@ -41,27 +32,10 @@ public class Main {
     public static void main(String[] args) {
         // Elegir la persistencia SIN tocar el núcleo. Por defecto SQLite;
         // pasa "memoria" como argumento para usar el repositorio en memoria.
-        boolean usarMemoria = false;
+        boolean usarMemoria = args.length > 0 && args[0].equalsIgnoreCase("memoria");
 
-        // 1) CAPA EXTERNA: implementaciones concretas que firman los contratos.
-        //    Aquí está la magia de la cebolla: cambiar de tecnología de
-        //    almacenamiento es cambiar SOLO estas dos líneas.
-        IRepositorioCuenta repoCuenta;
-        IRepositorioCliente repoCliente;
-        if (usarMemoria) {
-            repoCuenta = new RepositorioCuentaEnMemoria();
-            repoCliente = new RepositorioClienteEnMemoria();
-        } else {
-            BaseDatosSQLite bd = new BaseDatosSQLite("banco.db");
-            repoCuenta = new RepositorioCuentaSQLite(bd);
-            repoCliente = new RepositorioClienteSQLite(bd);
-        }
-
-        // 2) NÚCLEO - política de dominio (2% mensual).
-        PoliticaInteres politicaInteres = new PoliticaInteres(0.02);
-
-        // 3) NÚCLEO - servicio de aplicación: recibe las dependencias por constructor.
-        ServicioCuentas banco = new ServicioCuentas(repoCuenta, repoCliente, politicaInteres);
+        // El Composition Root arma todo y nos entrega el servicio de aplicación.
+        ServicioCuentas banco = Bootstrap.crearBanco(usarMemoria);
 
         titulo("ARQUITECTURA DE CEBOLLA - DEMO BANCO");
         System.out.println("Persistencia activa: " + (usarMemoria ? "EN MEMORIA" : "SQLite (banco.db)") + "\n");
@@ -83,7 +57,7 @@ public class Main {
         //banco.transferir("0002", "0003", 200);
         System.out.println("Ana transfirió 300 a Luis\n");
 
-        // --- Caso de uso: aplicar intereses (política de dominio) ---
+        // --- Caso de uso: aplicar intereses ---
         double interes = banco.aplicarInteresMensual("0002");
         System.out.printf("Se aplicó interés mensual a la cuenta de Luis: +%.2f%n%n", interes);
 
@@ -91,8 +65,8 @@ public class Main {
         System.out.println("Intentando que Ana retire 5000 (no tiene saldo)...");
         try {
             banco.retirar("0001", 5000);
-        } catch (SaldoInsuficienteException e) {
-            System.out.println("  -> El NÚCLEO bloqueó la operación: " + e.getMessage() + "\n");
+        } catch (OperacionRechazadaException e) {
+            System.out.println("  -> Operación rechazada por la aplicación: " + e.getMessage() + "\n");
         }
 
         // --- Mostrar estado final ---

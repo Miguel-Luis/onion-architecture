@@ -7,6 +7,7 @@ import com.banco.nucleo.contratos.IRepositorioCuenta;
 import com.banco.nucleo.modelo.Cliente;
 import com.banco.nucleo.modelo.Cuenta;
 import com.banco.nucleo.modelo.PoliticaInteres;
+import com.banco.nucleo.modelo.SaldoInsuficienteException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -36,7 +37,7 @@ public class ServicioCuentas {
         this.politicaInteres = politicaInteres;
     }
 
-    public Cuenta abrirCuenta(String documentoCliente, String nombreCliente, String numeroCuenta) {
+    public void abrirCuenta(String documentoCliente, String nombreCliente, String numeroCuenta) {
         Cliente cliente = repositorioCliente.buscarPorDocumento(documentoCliente)
                 .orElseGet(() -> {
                     Cliente nuevo = new Cliente(documentoCliente, nombreCliente);
@@ -46,7 +47,6 @@ public class ServicioCuentas {
 
         Cuenta cuenta = new Cuenta(numeroCuenta, cliente);
         repositorioCuenta.guardar(cuenta);
-        return cuenta;
     }
 
     public void depositar(String numeroCuenta, double monto) {
@@ -57,19 +57,28 @@ public class ServicioCuentas {
 
     public void retirar(String numeroCuenta, double monto) {
         Cuenta cuenta = obtenerCuenta(numeroCuenta);
-        cuenta.retirar(monto);
+        try {
+            cuenta.retirar(monto);
+        } catch (SaldoInsuficienteException e) {
+            throw new OperacionRechazadaException(e.getMessage());
+        }
         repositorioCuenta.guardar(cuenta);
     }
 
     /**
      * Transferencia: caso de uso que coordina dos cuentas.
-     * Las reglas (saldo suficiente, montos válidos) siguen viviendo en la entidad.
+     * Las reglas (saldo suficiente, montos válidos) siguen viviendo en la entidad;
+     * aquí solo traducimos el error de dominio al lenguaje de la aplicación.
      */
     public void transferir(String numeroOrigen, String numeroDestino, double monto) {
         Cuenta origen = obtenerCuenta(numeroOrigen);
         Cuenta destino = obtenerCuenta(numeroDestino);
 
-        origen.retirar(monto);
+        try {
+            origen.retirar(monto);
+        } catch (SaldoInsuficienteException e) {
+            throw new OperacionRechazadaException(e.getMessage());
+        }
         destino.depositar(monto);
 
         repositorioCuenta.guardar(origen);
